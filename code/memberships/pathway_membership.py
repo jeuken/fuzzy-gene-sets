@@ -118,8 +118,7 @@ def process_and_expand_pathways(gmt_path, Ensembl_ID_dict_path, string_scores_pa
         )
 
         # Fill NaNs with zeros for memberships from original pathways data
-        final_df = pathways_expanded.fillna({'Default_Membership': np.nan, 'Overlap_Membership': np.nan})
-
+        final_df = pathways_expanded
         # Save the final DataFrame
         final_df.to_csv(output_file, sep="\t", index=False)
         print(f"Filtered and normalized DataFrame saved to {output_file}")

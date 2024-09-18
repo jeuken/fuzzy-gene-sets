@@ -48,8 +48,8 @@ def process_query_set(ranked_query_path, output_path):
         print(f"An error occurred: {e}")
 
 # Application paths
-ranked_query_path = "/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/gemma/Alzheimers_GSE95587_ranked.csv"
-output_path = "/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/gemma/Alzheimers_GSE95587_query.csv"
+ranked_query_path = "/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/gemma/Huntingtons_GSE64810_ranked_t.csv"
+output_path = "/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/gemma/Huntingtons_GSE64810_query_t.csv"
 
 # Process the query set
 process_query_set(ranked_query_path, output_path)
