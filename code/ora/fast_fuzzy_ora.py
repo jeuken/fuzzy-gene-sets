@@ -50,11 +50,17 @@ def ora_compute_stats(pathway, query_df, n_permutations, n_jobs, plots=False):
         'Membership': pathway['Membership']
     })
 
-    merged_df = pd.merge(query_df, pathway_df, on='Ensembl_ID', how='outer', suffixes=('_query', '_pathway')).fillna(0)
+    # Perform a left join to keep all query genes and include only matching pathway genes
+    merged_df = pd.merge(query_df, pathway_df, on='Ensembl_ID', how='left', suffixes=('_query', '_pathway')).fillna(0)
 
+    # Set pathway memberships to zero for genes not found in the pathway
+    merged_df['Membership_pathway'] = merged_df['Membership_pathway'].fillna(0)
+
+    # Get membership arrays for both query and pathway
     query_memberships_full = merged_df['Membership_query'].values
     pathway_memberships_full = merged_df['Membership_pathway'].values
 
+    # Calculate observed intersection
     observed_intersection = ora_fuzzy_intersection(query_memberships_full, pathway_memberships_full)
     
     if plots:
@@ -65,7 +71,6 @@ def ora_compute_stats(pathway, query_df, n_permutations, n_jobs, plots=False):
         null_distribution = ora_null_distribution(query_memberships_full, pathway_memberships_full, n_permutations // 10, n_jobs)
         p_value = ora_p_value(observed_intersection, null_distribution)
         return observed_intersection, p_value
-
 
 def ora_plot_null_distribution(pathway, observed_score, null_distribution, p_value, plot_path, query_membership_type, pathway_membership_type, dataset_name):
     plt.figure(figsize=(8, 6))
@@ -163,19 +168,19 @@ if __name__ == "__main__":
 # Comment the previous line and uncomment the following lines if you want to run this script directly from an IDE.
 # This will bypass the command-line argument parsing and allow you to set parameters directly in the script.
 
-    query_file = "../../data/gemma/Alzheimers_GSE95587_query_t.csv"
-    pathway_file = "../../data/pathways/KEGG/KEGG_2022_entrez_with_membership_overlap.tsv"
+    query_file = "../../data/gemma/BreastCancer_GSE15852_query_t.csv"
+    pathway_file = "../../data/pathways/KEGG/KEGG_2022_entrez_with_membership_new.tsv"
     query_membership_type = "Crisp_Membership"
-    pathway_membership_type = "Overlap_Membership"
+    pathway_membership_type = "Overlap_Membership_linear"
     output_path = "../../data/ORA_output"
     plots = False
-    dataset_name = "Alzheimers_GSE95587"
+    dataset_name = "BreastCancer_GSE15852"
     results_df = fuzzy_ora(
         query_file=query_file,
         pathway_file=pathway_file,
         query_membership_type=query_membership_type,
         pathway_membership_type=pathway_membership_type,
-        n_permutations=1000000,
+        n_permutations=10000000,
         n_jobs=cpu_count()-1,
         output_path=output_path,
         plots=plots,
