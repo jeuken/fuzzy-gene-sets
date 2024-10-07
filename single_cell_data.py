@@ -5,7 +5,6 @@ from scipy.stats import f_oneway
 from joblib import Parallel, delayed, cpu_count
 from src.util.qvalue import qvalues
 
-#this is a test
 
 def anova_proc_scipy(data_groupby, gene_name):
     f, p = f_oneway(*data_groupby[gene_name].apply(list))
