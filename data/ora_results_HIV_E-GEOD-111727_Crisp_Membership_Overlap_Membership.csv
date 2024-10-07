@@ -1,0 +1,29 @@
+Pathway_Name,Description,Observed_Intersection,p_value,Rank
+hsa05171,Coronavirus disease - COVID-19,62.55059523809525,0.0,1
+hsa05169,Epstein-Barr virus infection,21.520833333333336,0.0,1
+hsa05168,Herpes simplex virus 1 infection,32.8125,1e-05,3
+hsa05166,Human T-cell leukemia virus 1 infection,18.651785714285715,1e-05,3
+hsa05164,Influenza A,15.032738095238095,1e-05,3
+hsa05170,Human immunodeficiency virus 1 infection,16.729166666666664,3.5e-05,6
+hsa05162,Measles,11.949404761904763,0.000126,7
+hsa05131,Shigellosis,17.69047619047619,0.000193,8
+hsa05132,Salmonella infection,17.785714285714285,0.000247,9
+hsa05160,Hepatitis C,11.87797619047619,0.000384,10
+hsa05135,Yersinia infection,10.985119047619047,0.000732,11
+hsa05130,Pathogenic Escherichia coli infection,13.488095238095237,0.00138,12
+hsa05163,Human cytomegalovirus infection,13.37797619047619,0.002287,13
+hsa05142,Chagas disease,8.008928571428571,0.002304,14
+hsa05165,Human papillomavirus infection,15.619047619047619,0.019932,15
+hsa05134,Legionellosis,3.985119047619048,0.025913,16
+hsa05110,Vibrio cholerae infection,3.8363095238095237,0.035528,17
+hsa05140,Leishmaniasis,4.717261904761905,0.040465,18
+hsa05161,Hepatitis B,7.916666666666666,0.045002,19
+hsa05145,Toxoplasmosis,6.241071428571429,0.04625,20
+hsa05167,Kaposi sarcoma-associated herpesvirus infection,8.69345238095238,0.05508,21
+hsa05152,Tuberculosis,6.2648809523809526,0.253695,22
+hsa05150,Staphylococcus aureus infection,2.860119047619048,0.410533,23
+hsa05133,Pertussis,1.8660714285714284,0.514712,24
+hsa05120,Epithelial cell signaling in Helicobacter pylori infection,1.818452380952381,0.52742,25
+hsa05146,Amoebiasis,0.8541666666666666,0.915261,26
+hsa05144,Malaria,0.0,1.0,27
+hsa05143,African trypanosomiasis,0.0,1.0,27
