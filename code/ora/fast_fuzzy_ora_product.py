@@ -6,6 +6,87 @@ import os
 import argparse
 import tqdm
 
+cancer_pathway_ids = [
+    "hsa05210",  # Colorectal cancer
+    "hsa05212",  # Pancreatic cancer
+    "hsa05225",  # Hepatocellular carcinoma
+    "hsa05226",  # Gastric cancer
+    "hsa05214",  # Glioma
+    "hsa05216",  # Thyroid cancer
+    "hsa05221",  # Acute myeloid leukemia
+    "hsa05220",  # Chronic myeloid leukemia
+    "hsa05217",  # Basal cell carcinoma
+    "hsa05218",  # Melanoma
+    "hsa05211",  # Renal cell carcinoma
+    "hsa05219",  # Bladder cancer
+    "hsa05215",  # Prostate cancer
+    "hsa05213",  # Endometrial cancer
+    "hsa05224",  # Breast cancer
+    "hsa05222",  # Small cell lung cancer
+    "hsa05223"   # Non-small cell lung cancer
+]
+
+viral_pathway_ids = [
+    "hsa05166",  # Human T-cell leukemia virus 1 infection
+    "hsa05170",  # Human immunodeficiency virus 1 infection
+    "hsa05161",  # Hepatitis B
+    "hsa05160",  # Hepatitis C
+    "hsa05171",  # Coronavirus disease - COVID-19
+    "hsa05164",  # Influenza A
+    "hsa05162",  # Measles
+    "hsa05168",  # Herpes simplex virus 1 infection
+    "hsa05163",  # Human cytomegalovirus infection
+    "hsa05167",  # Kaposi sarcoma-associated herpesvirus infection
+    "hsa05169",  # Epstein-Barr virus infection
+    "hsa05165"   # Human papillomavirus infection
+]
+
+infection_pathways = [
+    'hsa05166',  # Human T-cell leukemia virus 1 infection
+    'hsa05170',  # Human immunodeficiency virus 1 infection
+    'hsa05161',  # Hepatitis B
+    'hsa05160',  # Hepatitis C
+    'hsa05171',  # Coronavirus disease - COVID-19
+    'hsa05164',  # Influenza A
+    'hsa05162',  # Measles
+    'hsa05168',  # Herpes simplex virus 1 infection
+    'hsa05163',  # Human cytomegalovirus infection
+    'hsa05167',  # Kaposi sarcoma-associated herpesvirus infection
+    'hsa05169',  # Epstein-Barr virus infection
+    'hsa05165',  # Human papillomavirus infection
+    'hsa05110',  # Vibrio cholerae infection
+    'hsa05120',  # Epithelial cell signaling in Helicobacter pylori infection
+    'hsa05130',  # Pathogenic Escherichia coli infection
+    'hsa05132',  # Salmonella infection
+    'hsa05131',  # Shigellosis
+    'hsa05135',  # Yersinia infection
+    'hsa05133',  # Pertussis
+    'hsa05134',  # Legionellosis
+    'hsa05150',  # Staphylococcus aureus infection
+    'hsa05152',  # Tuberculosis
+    'hsa05146',  # Amoebiasis
+    'hsa05144',  # Malaria
+    'hsa05145',  # Toxoplasmosis
+    'hsa05140',  # Leishmaniasis
+    'hsa05142',  # Chagas disease
+    'hsa05143'   # African trypanosomiasis
+]
+
+
+top_infection_pathways = [
+'hsa05169',
+'hsa05168',
+'hsa05166',
+'hsa05164',
+'hsa05170'
+]
+
+
+
+epstein = ['hsa05169']
+
+
+
 def ora_get_query(query_file, query_membership_type):
     query_df = pd.read_csv(query_file, sep='\t', usecols=['Ensembl_ID', query_membership_type])
     query_df.dropna(subset=[query_membership_type], inplace=True)
@@ -28,9 +109,10 @@ def ora_get_pathways(pathway_file, pathway_membership_type):
     return pathway_df
 
 def ora_fuzzy_intersection(query_memberships, pathway_memberships):
-    intersection = np.minimum(query_memberships, pathway_memberships)
-    intersection_size = np.sum(intersection)
+    intersection = np.multiply(query_memberships, pathway_memberships)  # Element-wise product
+    intersection_size = np.sum(intersection)  # Sum of the product values
     return intersection_size
+
 
 def ora_permutation(query_memberships, pathway_memberships):
     random_intersection_size = ora_fuzzy_intersection(np.random.permutation(query_memberships), pathway_memberships)
@@ -84,7 +166,7 @@ def ora_plot_null_distribution(pathway, observed_score, null_distribution, p_val
     plt.tight_layout()
     
     folder_name = f"{query_membership_type}_{pathway_membership_type}"
-    full_plot_path = os.path.join(plot_path, 'null_distributions', folder_name)
+    full_plot_path = os.path.join(plot_path, 'null_distributions_product', folder_name)
     os.makedirs(full_plot_path, exist_ok=True)
     
     file_name = f"{pathway}_{dataset_name}_{query_membership_type}_{pathway_membership_type}.png"
@@ -133,7 +215,7 @@ def fuzzy_ora(query_file, pathway_file, query_membership_type='Crisp', pathway_m
     if output_path:
         results_folder = os.path.join(output_path, dataset_name)
         os.makedirs(results_folder, exist_ok=True)
-        results_file_name = f"ora_results_{dataset_name}_{query_membership_type}_{pathway_membership_type}.csv"
+        results_file_name = f"epstein_ora_results_{dataset_name}_{query_membership_type}_{pathway_membership_type}.csv"
         results_df.to_csv(os.path.join(results_folder, results_file_name), index=False)
     
     return results_df
@@ -172,45 +254,29 @@ if __name__ == "__main__":
 
 # Comment the previous line and uncomment the following lines if you want to run this script directly from an IDE.
 # This will bypass the command-line argument parsing and allow you to set parameters directly in the script.
-    pathway_ids = [
-        "hsa05210",  # Colorectal cancer
-        "hsa05212",  # Pancreatic cancer
-        "hsa05225",  # Hepatocellular carcinoma
-        "hsa05226",  # Gastric cancer
-        "hsa05214",  # Glioma
-        "hsa05216",  # Thyroid cancer
-        "hsa05221",  # Acute myeloid leukemia
-        "hsa05220",  # Chronic myeloid leukemia
-        "hsa05217",  # Basal cell carcinoma
-        "hsa05218",  # Melanoma
-        "hsa05211",  # Renal cell carcinoma
-        "hsa05219",  # Bladder cancer
-        "hsa05215",  # Prostate cancer
-        "hsa05213",  # Endometrial cancer
-        "hsa05224",  # Breast cancer
-        "hsa05222",  # Small cell lung cancer
-        "hsa05223"   # Non-small cell lung cancer
-    ]
-    query_file = "../../data/cancer/breast_cancer/breast_cancer_GSE9574_membership.csv"
+    pathway_ids = viral_pathway_ids
+    query_file = "../../data/single_cell/HIV_E-GEOD-111727_membership.csv"
     pathway_file = "../../data/pathways/KEGG/KEGG_2022_membership.tsv"
-    query_membership_type = 'Fuzzy_Membership'
+    query_membership_type = 'Crisp_Membership'
     pathway_membership_type = 'Overlap_Membership'
-    output_path = "../../data/ORA_output/cancer/breast_cancer/min"
-    dataset_name = "breast_cancer_GSE9574"
-    plots = True
+    output_path = "../../data/ORA_output/infection/HIV"
+    dataset_name = "HIV_E-GEOD-111727"
+    pathway_ids = epstein
+    plots = False
     results_df = fuzzy_ora(
         query_file=query_file,
         pathway_file=pathway_file,
         query_membership_type=query_membership_type,
         pathway_membership_type=pathway_membership_type,
-        n_permutations=1000000,
+        n_permutations=1000000000,
         n_jobs=cpu_count()-1,
         output_path=output_path,
-        plots=plots,
+        plots=False,
         dataset_name=dataset_name,
         pathway_ids=pathway_ids  # Pass the list of selected pathway IDs
     )
 
     print("Results:\n", results_df.head())
+
 
 
