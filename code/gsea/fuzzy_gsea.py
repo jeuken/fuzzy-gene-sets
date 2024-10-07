@@ -34,8 +34,6 @@ def calculate_statistics_from_expression_dataframe(df):
     """Calculates statistics from expression dataframe using limma in R."""
     # Check for duplicates and missing values
     duplicates = df['Ensembl_ID'].duplicated().sum()
-    print(f"Number of duplicate Ensembl_IDs: {duplicates}")
-    print(f"Number of missing Ensembl_IDs: {df['Ensembl_ID'].isnull().sum()}")
     
     # Set Ensembl_ID as the row index
     df.set_index('Ensembl_ID', inplace=True)
@@ -149,7 +147,7 @@ def permute_and_calculate_null_distribution(expression_df, pathways_dict, n_perm
         for pathway, score in enrichment_scores.items():
             null_distributions[pathway].append(score)
         
-        if (i + 1) % 100 == 0:
+        if (i + 1) % 10 == 0:
             print(f'Completed {i + 1} permutations.')
     
     return null_distributions
@@ -241,6 +239,6 @@ def main(expression_path, pathway_file_path, output_path, plot_path=None, member
 if __name__ == "__main__":
     expression_path = "/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/gemma/Alzheimers_GSE95587_formatted.csv"
     pathway_file_path = "/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/pathways/KEGG/KEGG_2022_entrez_with_membership.tsv"
-    output_path = "/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/GSEA_output"
-    plot_path = '/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/GSEA_output/plots'
-    main(expression_path, pathway_file_path, output_path, plot_path, membership='Overlap_Membership', n_permutations=10)
+    output_path = "/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/GSEA_output/Alzheimers_GSE95587"
+    plot_path = '/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/GSEA_output//Alzheimers_GSE95587/plots'
+    main(expression_path, pathway_file_path, output_path, plot_path, membership='Default_Membership', n_permutations=100)

@@ -6,6 +6,8 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from scipy.stats import ttest_ind
+from joblib import Parallel, delayed, cpu_count
+from tqdm import tqdm
 
 def shuffle_phenotype_labels(df):
     """Randomly shuffles phenotype labels among 'control' and 'disease' columns."""
@@ -53,7 +55,6 @@ def calculate_statistics_from_expression_dataframe(df):
     
     return results_df
 
-
 def fuzzy_gsea_score(ranked_list, pathways_dict):
     """Calculates enrichment scores for pathways using a ranked list and a dataset of pathways."""
     enrichment_scores = {}
@@ -91,22 +92,26 @@ def fuzzy_gsea_score(ranked_list, pathways_dict):
 
     return enrichment_scores, plotting_values_all
 
-def permute_and_calculate_null_distribution(expression_df, pathways_dict, n_permutations=1000):
+def permute_and_calculate_null_distribution(expression_df, pathways_dict, n_permutations=1000, n_jobs=cpu_count() - 1):
     """Generates a null distribution of enrichment scores by permuting column labels."""
     null_distributions = {pathway: [] for pathway in pathways_dict.keys()}
-    
-    for i in range(n_permutations):
+
+    def process_permutation(_):
+        """Perform a single permutation and return the enrichment scores."""
         shuffled_df = shuffle_phenotype_labels(expression_df)
         ranked_df = calculate_statistics_from_expression_dataframe(shuffled_df)
         ranked_list = ranked_df.set_index('Ensembl_ID')['t'].to_dict()
         enrichment_scores, _ = fuzzy_gsea_score(ranked_list, pathways_dict)
+        return enrichment_scores
 
+    results = Parallel(n_jobs=n_jobs)(
+        delayed(process_permutation)(i) for i in tqdm(range(n_permutations), desc="Permutations")
+    )
+
+    for enrichment_scores in results:
         for pathway, score in enrichment_scores.items():
             null_distributions[pathway].append(score)
-        
-        if (i + 1) % 100 == 0:
-            print(f'Completed {i + 1} permutations.')
-    
+
     return null_distributions
 
 def calculate_p_value(observed_score, null_distribution):
@@ -186,16 +191,17 @@ def main(expression_path, pathway_file_path, output_path, plot_path=None, member
         results.append({'Pathway_Name': pathway, 'Observed_Score': observed_score, 'p-value': p_value, 'Description': pathway_description})
 
     results_df = pd.DataFrame(results)
-    results_df = results_df.sort_values(by='p-value')  # Rank results by p-value
-    results_df.to_csv(os.path.join(output_path, f'fuzzy_gsea_results_{membership}.tsv'), sep='\t', index=False)
+    results_df['Rank'] = results_df['p-value'].rank(method='first')  # Add rank column
+    results_df = results_df.sort_values(by='p-value').reset_index(drop=True)  # Sort by p-value
+    results_df.to_csv(os.path.join(output_path, f'gsea_{membership}_results.csv'), index=False)
 
     if plot_path:
         save_enrichment_plots(plotting_values_all, observed_scores, pathways_dict, plot_path, membership)
         save_null_distribution_plots(null_distributions, observed_scores, pathways_dict, plot_path, membership)
 
 if __name__ == "__main__":
-    expression_path = "/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/gemma/Huntingtons_GSE64810_formatted.csv"
-    pathway_file_path = "/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/pathways/KEGG/KEGG_2022_entrez_with_membership.tsv"
-    output_path = "/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/GSEA_output/Huntingtons_GSE64810"
-    plot_path = '/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/GSEA_output/Huntingtons_GSE64810/plots'
-    main(expression_path, pathway_file_path, output_path, plot_path, membership='Overlap_Membership', n_permutations=10000)
+    expression_path = "/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/gemma/Asthma_GSE27011_formatted.csv"
+    pathway_file_path = "/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/pathways/KEGG/KEGG_2022_entrez_with_membership_new.tsv"
+    output_path = "/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/GSEA_output/Asthma_GSE27011"
+    plot_path = '/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data/GSEA_output/Asthma_GSE27011/plots'
+    main(expression_path, pathway_file_path, output_path, plot_path = None, membership='Overlap_Membership_linear', n_permutations=10000)
