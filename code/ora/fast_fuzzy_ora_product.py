@@ -215,7 +215,7 @@ def fuzzy_ora(query_file, pathway_file, query_membership_type='Crisp', pathway_m
     if output_path:
         results_folder = os.path.join(output_path, dataset_name)
         os.makedirs(results_folder, exist_ok=True)
-        results_file_name = f"epstein_ora_results_{dataset_name}_{query_membership_type}_{pathway_membership_type}.csv"
+        results_file_name = f"ora_results_{dataset_name}_{query_membership_type}_{pathway_membership_type}.csv"
         results_df.to_csv(os.path.join(results_folder, results_file_name), index=False)
     
     return results_df
@@ -258,17 +258,17 @@ if __name__ == "__main__":
     query_file = "../../data/single_cell/HIV_E-GEOD-111727_membership.csv"
     pathway_file = "../../data/pathways/KEGG/KEGG_2022_membership.tsv"
     query_membership_type = 'Crisp_Membership'
-    pathway_membership_type = 'Overlap_Membership'
+    pathway_membership_type = 'Overlap_Membership_linear'
     output_path = "../../data/ORA_output/infection/HIV"
     dataset_name = "HIV_E-GEOD-111727"
-    pathway_ids = epstein
+    pathway_ids = infection_pathways
     plots = False
     results_df = fuzzy_ora(
         query_file=query_file,
         pathway_file=pathway_file,
         query_membership_type=query_membership_type,
         pathway_membership_type=pathway_membership_type,
-        n_permutations=1000000000,
+        n_permutations=10000000,
         n_jobs=cpu_count()-1,
         output_path=output_path,
         plots=False,

@@ -62,7 +62,7 @@ def process_and_expand_pathways(gmt_path, Ensembl_ID_dict_path, string_scores_pa
         # Create DataFrame from collected rows
         pathways_df = pd.DataFrame(
             pathway_rows, 
-            columns=['Pathway_Name', 'Description', 'Ensembl_ID', 'Default_Membership']
+            columns=['Pathway_Name', 'Description', 'Ensembl_ID', 'Crisp_Membership']
         )
 
         # Calculate gene frequencies for overlap membership
@@ -99,7 +99,7 @@ def process_and_expand_pathways(gmt_path, Ensembl_ID_dict_path, string_scores_pa
                         'Ensembl_ID': gene,
                         'Expansion_Membership': avg_score / 1000,
                         'Description': pathway_description,
-                        'Default_Membership': np.nan,  # Fill NaN for the new row
+                        'Crisp_Membership': np.nan,  # Fill NaN for the new row
                         'Overlap_Membership': np.nan  # Fill NaN for the new row
                     }
                     new_rows.append(new_row)
