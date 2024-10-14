@@ -13,6 +13,7 @@ data.obs = pd.read_csv('data/E-ANND-3/experimental_design.tsv', sep='\t', index_
 
 
 groups = [*np.repeat(1,np.round(data.n_obs/2)),*np.repeat(2,data.n_obs - np.round(data.n_obs/2))]
+np.random.seed(73005)
 data.obs['group'] = np.random.permutation(groups)
 
 group1 = data.obs[data.obs['group'] == 1].index
