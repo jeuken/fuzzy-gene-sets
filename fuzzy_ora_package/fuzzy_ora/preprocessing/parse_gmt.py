@@ -3,14 +3,14 @@ import os
 import argparse
 
 def parse_gmt(gmt_path: str, id_dict_path: str, output_path: str = None) -> pd.DataFrame:
-    """Parse a GMT file and map gene IDs to Ensembl IDs, optionally saving results."""
+    """Parse a GMT file and map gene IDs to Ensembl IDs, ensuring no duplicate Ensembl_IDs within pathways."""
     
     # Load the ID conversion dictionary, ensuring exactly two columns
     gene_dict = pd.read_csv(id_dict_path, sep='\t', dtype=str)
     if gene_dict.shape[1] != 2:
         raise ValueError(f"Expected 2 columns, but found {gene_dict.shape[1]}.")
 
-    # Rename columns dynamically by checking for 'ens' (case-insensitive) in one of the columns
+    # Rename columns dynamically by checking for 'ensembl' in one of the columns
     gene_dict = gene_dict.rename(columns=lambda col: 'Ensembl_ID' if 'ensembl' in col.lower() else 'Other_ID')
 
     # Clean up: remove NaNs, duplicates, strip whitespace, and set index to 'Other_ID'
@@ -45,6 +45,12 @@ def parse_gmt(gmt_path: str, id_dict_path: str, output_path: str = None) -> pd.D
 
     # Create a DataFrame from the collected pathway data
     pathway_df = pd.DataFrame(pathway_data, columns=['Pathway_Name', 'Description', 'Ensembl_ID'])
+
+    # Remove duplicate rows where both Pathway_Name and Ensembl_ID are the same
+    pathway_df = pathway_df.drop_duplicates(subset=['Pathway_Name', 'Ensembl_ID'])
+    
+    # Report the number of duplicates removed
+    print(f"Duplicates removed: {len(pathway_data) - len(pathway_df)}")
 
     # If no output path is provided, return the DataFrame without saving
     if output_path is None:

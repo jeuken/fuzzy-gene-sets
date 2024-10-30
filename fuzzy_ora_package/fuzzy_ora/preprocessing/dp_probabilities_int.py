@@ -4,7 +4,37 @@ import pandas as pd
 from joblib import Parallel, delayed, cpu_count
 from tqdm import tqdm
 from scipy.special import comb
-from decimal import Decimal, getcontext
+from decimal import Decimal
+
+infection_pathway_ids = [
+    'hsa05166', 'hsa05170', 'hsa05161', 'hsa05160', 'hsa05171',
+    'hsa05164', 'hsa05162', 'hsa05168', 'hsa05163', 'hsa05167',
+    'hsa05169', 'hsa05165', 'hsa05110', 'hsa05120', 'hsa05130',
+    'hsa05132', 'hsa05131', 'hsa05135', 'hsa05133', 'hsa05134',
+    'hsa05150', 'hsa05152', 'hsa05146', 'hsa05144', 'hsa05145',
+    'hsa05140', 'hsa05142', 'hsa05143'
+]
+
+
+cancer_pathway_ids = [
+    "hsa05210",  # Colorectal cancer
+    "hsa05212",  # Pancreatic cancer
+    "hsa05225",  # Hepatocellular carcinoma
+    "hsa05226",  # Gastric cancer
+    "hsa05214",  # Glioma
+    "hsa05216",  # Thyroid cancer
+    "hsa05221",  # Acute myeloid leukemia
+    "hsa05220",  # Chronic myeloid leukemia
+    "hsa05217",  # Basal cell carcinoma
+    "hsa05218",  # Melanoma
+    "hsa05211",  # Renal cell carcinoma
+    "hsa05219",  # Bladder cancer
+    "hsa05215",  # Prostate cancer
+    "hsa05213",  # Endometrial cancer
+    "hsa05224",  # Breast cancer
+    "hsa05222",  # Small cell lung cancer
+    "hsa05223"   # Non-small cell lung cancer
+]
 
 def genesetdp(k):
     max_s = sum(m * c for m, c in k)  # Sum of membership * count for maximum possible score
@@ -77,20 +107,20 @@ def process_pathway(pathway, k, output_folder):
     
     return f"Saved probabilities for pathway: {pathway} to {output_file_path}"
 
-# Main function
-def main(pathway_file,selected_pathways=None,factor = 337):
+
+def dp_probabilities_main(pathway_file, selected_pathways=None, factor=337, pathway_membership_type='Overlap_Membership'):
     # Load the TSV file into a DataFrame
     df = pd.read_csv(pathway_file, sep='\t')
 
     # Generate the dictionary of pathway membership tuples
-    pathway_memberships = create_membership_tuples(df,factor)
+    pathway_memberships = create_membership_tuples(df, factor)
 
     # Filter pathways if selected_pathways is provided
     if selected_pathways is not None:
         pathway_memberships = {pathway: k for pathway, k in pathway_memberships.items() if pathway in selected_pathways}
 
-    # Create an output folder to save the results if it doesn't exist
-    output_folder = '../../../data/pathways/KEGG/DP/Overlap_int/'
+    # Create an output folder based on the specified pathway membership type
+    output_folder = os.path.join('../../../data/pathways/KEGG/DP/', pathway_membership_type)
     os.makedirs(output_folder, exist_ok=True)
 
     # Use joblib for parallel processing and tqdm for the progress bar
@@ -98,9 +128,11 @@ def main(pathway_file,selected_pathways=None,factor = 337):
         delayed(process_pathway)(pathway, k, output_folder)
         for pathway, k in tqdm(pathway_memberships.items(), desc="Processing pathways")
     )
-    
+
 if __name__ == "__main__":
     pathway_file = '../../../data/pathways/KEGG/KEGG_2022_pathway_memberships.tsv'
-    specified_pathways = None
-    factor = 337
-    main(pathway_file, selected_pathways=specified_pathways,factor = factor)
+    specified_pathways = infection_pathway_ids
+    factor = 113
+    pathway_membership_type = 'Strict_Overlap_Membership'  # Specify your pathway membership type here
+    dp_probabilities_main(pathway_file, selected_pathways=specified_pathways, factor=factor, pathway_membership_type=pathway_membership_type)
+

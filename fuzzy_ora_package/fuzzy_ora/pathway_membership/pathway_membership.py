@@ -12,9 +12,17 @@ def crisp_membership(pathways_df):
 def overlap_membership(pathways_df):
     """Calculate Overlap Membership based on gene counts in pathways."""
     gene_counts = pathways_df['Ensembl_ID'].value_counts()
+    max_count = gene_counts.max()  # Assign max count from gene counts
     total_pathways = pathways_df['Pathway_Name'].nunique()
-    pathways_df['Overlap_Membership'] = (1+total_pathways - pathways_df['Ensembl_ID'].map(gene_counts)) / (total_pathways)
+    
+    # Print max_count and total_pathways to the console
+    print(f"Max count of gene occurrences across pathways: {max_count}")
+    print(f"Total number of unique pathways: {total_pathways}")
+    
+    pathways_df['Overlap_Membership'] = (1 + total_pathways - pathways_df['Ensembl_ID'].map(gene_counts)) / total_pathways
+    pathways_df['Strict_Overlap_Membership'] = (1 + max_count - pathways_df['Ensembl_ID'].map(gene_counts)) / max_count
     return pathways_df
+
 
 def string_membership_single_pathway(pathway_name, pathway_data, string_scores):
     """Process a single pathway to determine expansion membership based on STRING scores."""

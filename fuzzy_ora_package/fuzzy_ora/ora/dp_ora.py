@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed, cpu_count
-import matplotlib.pyplot as plt
 import os
 import argparse
 import tqdm
@@ -65,10 +63,10 @@ def ora_fuzzy_intersection(query_memberships, pathway_memberships):
     intersection_size = np.sum(intersection)
     return intersection_size
 
-def ora_p_value(observed_intersection, probabilities_df, universe_size, pathway_size, query_size):
+def dp_p_value(observed_intersection, probabilities_df, universe_size, pathway_size, query_size, factor):
     '''Calculate the p-value based on the observed intersection using precomputed probabilities.'''
-    # Divide the observed intersection by 337
-    adjusted_intersection = observed_intersection * 337
+    # Divide the observed intersection by the user-defined factor
+    adjusted_intersection = observed_intersection * factor
 
     # Round the adjusted intersection to 10 decimal places
     adjusted_intersection = round(adjusted_intersection, 10)
@@ -96,7 +94,7 @@ def ora_p_value(observed_intersection, probabilities_df, universe_size, pathway_
 
     return p_value 
 
-def fuzzy_ora_compute_stats(pathway, query_df, probability_file, plots=False):
+def dp_ora_compute_stats(pathway, query_df, probability_file, factor, plots=False):
     '''Compute statistics for fuzzy ORA for a given pathway and query DataFrame.'''
     # Load pathway-specific probabilities file
     probabilities_df = load_probabilities(probability_file)
@@ -106,6 +104,7 @@ def fuzzy_ora_compute_stats(pathway, query_df, probability_file, plots=False):
         'Pathway_Membership': pathway['Pathway_Membership']
     })
 
+    # Merge query_df with pathway_df
     merged_df = pd.merge(query_df, pathway_df, on='Ensembl_ID', how='left').fillna(0)
     
     query_memberships = merged_df['Query_Membership'].values
@@ -113,20 +112,25 @@ def fuzzy_ora_compute_stats(pathway, query_df, probability_file, plots=False):
     
     observed_intersection = ora_fuzzy_intersection(query_memberships, pathway_memberships)
 
-    pathway_size = len(pathway_df)
+    # Calculate pathway size considering only pathway genes found in query_df
+    pathway_size = merged_df[merged_df['Pathway_Membership'] > 0].shape[0]
+
+    # Universe size is still based on merged_df
     universe_size = len(merged_df)
+    # Query size is based on the number of genes with Query_Membership == 1
     query_size = len(merged_df[merged_df['Query_Membership'] == 1])
     
-    p_value = ora_p_value(observed_intersection, probabilities_df, universe_size, pathway_size, query_size)
+    p_value = dp_p_value(observed_intersection, probabilities_df, universe_size, pathway_size, query_size, factor)
     
     return observed_intersection, p_value
 
-def fuzzy_ora(
+def dp_ora(
     query_file: str,
     pathway_file: str,
     probability_folder: str,
+    factor: float = 113,  # User-defined factor with a default value
     query_membership_type: str = 'Crisp_Membership',
-    pathway_membership_type: str = 'Crisp_Membership',
+    pathway_membership_type: str = 'Overlap_Membership',
     output_path: Optional[str] = None,
     dataset_name: str = '',
     pathway_ids: Optional[List[str]] = None
@@ -152,8 +156,8 @@ def fuzzy_ora(
             print(f"Warning: Probability file for pathway '{pathway_name}' not found: {probability_file}. Skipping this pathway.")
             continue  # Skip to the next pathway
 
-        observed_intersection, p_value = fuzzy_ora_compute_stats(
-            pathway, query_df, probability_file
+        observed_intersection, p_value = dp_ora_compute_stats(
+            pathway, query_df, probability_file, factor  # Pass the factor here
         )
 
         results.append({
@@ -164,7 +168,6 @@ def fuzzy_ora(
         })
 
     results_df = pd.DataFrame(results)
-    results_df.sort_values('p_value', ascending=True, inplace=True)
     results_df['p_value'] = results_df['p_value'].apply(lambda x: f"{x:.4e}")
 
     if output_path:
@@ -174,12 +177,13 @@ def fuzzy_ora(
     return results_df
 
 
-def fuzzy_ora_main():
-    """Parse command-line arguments and execute the fuzzy_ora function."""
+def dp_ora_main():
+    """Parse command-line arguments and execute the dp_ora function."""
     parser = argparse.ArgumentParser(description="Run fuzzy ORA analysis.")
     parser.add_argument('-q', '--query_file', required=True, help="Path to the query file.")
     parser.add_argument('-p', '--pathway_file', required=True, help="Path to the pathway file.")
     parser.add_argument('-prob_folder', '--probability_folder', required=True, help="Path to the folder containing pathway-specific probability files.")
+    parser.add_argument('-f', '--factor', type=float, default=113, help="Factor to adjust the observed intersection.")
     parser.add_argument('-q_name', '--query_membership_type', default='Crisp_Membership', help="Query membership type.")
     parser.add_argument('-p_name', '--pathway_membership_type', default='Crisp_Membership', help="Pathway membership type.")
     parser.add_argument('-o', '--output_path', default=None, help="Output directory path.")
@@ -188,10 +192,11 @@ def fuzzy_ora_main():
 
     args = parser.parse_args()
     
-    fuzzy_ora(
+    dp_ora(
         query_file=args.query_file,
         pathway_file=args.pathway_file,
         probability_folder=args.probability_folder,
+        factor=args.factor,  # Pass the user-defined factor
         query_membership_type=args.query_membership_type,
         pathway_membership_type=args.pathway_membership_type,
         output_path=args.output_path,
@@ -199,21 +204,23 @@ def fuzzy_ora_main():
         pathway_ids=args.pathway_ids
     )
 
+
 if __name__ == "__main__":
     # Uncomment the following line to run from the command line
-    # fuzzy_ora_main()
+    # dp_ora_main()
 
     # Direct invocation for IDE usage
     query_file = "/Users/piamozdzanowski/VU/Fuzzy_Gene_Sets/data_old/single_cell/HIV_E-GEOD-111727_membership.csv"
     pathway_file =  '../../../data/pathways/KEGG/KEGG_2022_pathway_memberships.tsv'
-    probability_folder = "../../../data/pathways/KEGG/DP/Overlap_4"
+    probability_folder = "../../../data/pathways/KEGG/DP/Overlap"
     query_membership_type = 'Crisp_Membership'
     pathway_membership_type = 'Overlap_Membership'
     output_path = "../../../data/ora_output/dp_ora_output"
     dataset_name = "Testing_DP"
     pathway_ids = None
+    factor = 337
 
-    fuzzy_ora_results = fuzzy_ora(
+    dp_ora_results = dp_ora(
         query_file=query_file,
         pathway_file=pathway_file,
         probability_folder=probability_folder,
@@ -221,8 +228,9 @@ if __name__ == "__main__":
         pathway_membership_type=pathway_membership_type,
         output_path=output_path,
         dataset_name=dataset_name,
-        pathway_ids=pathway_ids
+        pathway_ids=pathway_ids,
+        factor = factor
     )
 
-    print(fuzzy_ora_results)
+    print(dp_ora_results)
 
